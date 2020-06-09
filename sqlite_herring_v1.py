@@ -19,11 +19,9 @@ try:
     DROP TABLE IF EXISTS Hafro_samples_info;
 
     CREATE TABLE Samples(
-        Sample_id text PRIMARY KEY,
-        Short_sid char(10), --for input into genepop max 10 char
-        Species_id_code int REFERENCES Species_id_codes(Species_id_code),
-        FOREIGN KEY(Sample_id) REFERENCES Hafro_samples_info(Sample_id),
-        FOREIGN KEY(Sample_id) REFERENCES Storage_info(Sample_id)
+        Sample_id text PRIMARY KEY REFERENCES Storage_info(Sample_id),
+        Short_sid char(12), --for input into genepop max 12 char
+        Species_id_code int REFERENCES Species_id_codes(Species_id_code)
         );
 
     CREATE TABLE Genotypes(
@@ -34,17 +32,17 @@ try:
         );
 
     CREATE TABLE Storage_info(
-        Sample_id text PRIMARY KEY,
+        Sample_id text,
         Box text,
         Plate_id text,
         Well text,
         Sample_type text,  --"tissue", "scales", "otholit", "DNA"
-        Matis_id int
+        Matis_id int PRIMARY KEY
         );
 
     CREATE TABLE Genetic_markers(
         Marker_id text PRIMARY KEY,
-        Short_mid char(10),
+        Short_mid char(3),
         Possible_genotypes text,
         Marker_type text, --affy
         Probe_sequence text, --{"forw":"ATCGCWACTW", "rev":"TGTRWCTG"}
@@ -57,24 +55,6 @@ try:
         Species_latin text,
         Species_english text,
         Species_icelandic text
-        );
-
-    CREATE TABLE Hafro_samples_info(
-        Sample_id text PRIMARY KEY,
-        Date_time_collect date,
-        Year_sampled int,
-        Latitute real,
-        Longitute real,
-        Cruise_id text,
-        Station text,
-        Age int,
-        Weight real,
-        Maturity int,
-        Length int,
-        Sex int,
-        Ship_id int,
-        Location text,
-        Sample_type text --"spawning", "feeding"
         )"""
     )
 
@@ -105,7 +85,9 @@ def csv_into_table(filename, table):
     give table argument as a string"""
     try:
         with conn:
-            csv_file = pd.read_csv(filename, sep=";")
+            csv_file = pd.read_csv(
+                filename, sep=";", encoding="latin1"
+            )  # latin1 Western Europe
             csv_file.to_sql(table, conn, if_exists="append", index=False)
     except sqlite3.Error:
         raise
@@ -119,5 +101,8 @@ def load_data(filenm, tb):
 
 
 load_data("/mnt/c/Users/alexa/Matis/SQL/results/04_06_20/HerSNP_long.csv", "Genotypes")
+load_data(
+    "/mnt/c/Users/alexa/Matis/SQL/data/herring/Species_id_codes.csv", "Species_id_codes"
+)
 
 conn.close()
