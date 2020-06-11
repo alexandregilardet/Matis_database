@@ -20,8 +20,10 @@ try:
 
     CREATE TABLE Samples(
         Sample_id text PRIMARY KEY REFERENCES Storage_info(Sample_id),
-        Short_sid char(12), --for input into genepop max 12 char
-        Species_id_code int REFERENCES Species_id_codes(Species_id_code)
+        Short_sid char(12) UNIQUE, --for input into genepop max 12 char
+        Species_id_code int REFERENCES Species_id_codes(Species_id_code),
+        Pop_name text,
+        Maturity text --"spawning" "feeding"
         );
 
     CREATE TABLE Genotypes(
@@ -42,7 +44,7 @@ try:
 
     CREATE TABLE Genetic_markers(
         Marker_id text PRIMARY KEY,
-        Short_mid char(3),
+        Short_mid text UNIQUE,
         Possible_genotypes text,
         Marker_type text, --affy
         Probe_sequence text, --{"forw":"ATCGCWACTW", "rev":"TGTRWCTG"}
@@ -100,9 +102,39 @@ def load_data(filenm, tb):
     return None
 
 
+def get_gt_csv(file):
+    """Queries and reshape to output a csv containing genotypes at each marker for 
+    each individual with its short_id and population"""
+    query = """SELECT Samples.Sample_id, Samples.Short_sid, Samples.Pop_name, 
+    Genotypes.Marker_id, Genotypes.Gt
+    FROM Samples, Genotypes
+    WHERE Samples.Sample_id = Genotypes.Sample_id"""
+    try:
+        with conn:
+            df = pd.read_sql_query(query, conn)
+    except sqlite3.Error:
+        raise
+    df2 = df.pivot_table(  # long to wide format
+        index=["Sample_id", "Short_sid", "Pop_name"],
+        columns="Marker_id",
+        values="Gt",  # str so need to adjust aggfunc
+        aggfunc=lambda x: " ".join(
+            x
+        ),  # if several values for same index, will concatenate with space
+    )
+    df2.to_csv(file, sep=";")
+    print(
+        f"Pulling out all genotypes from all individuals x markers into csv {file}..."
+    )
+    return None
+
+
 load_data("/mnt/c/Users/alexa/Matis/SQL/results/04_06_20/HerSNP_long.csv", "Genotypes")
 load_data(
     "/mnt/c/Users/alexa/Matis/SQL/data/herring/Species_id_codes.csv", "Species_id_codes"
 )
+load_data("/mnt/c/Users/alexa/Matis/SQL/data/herring/Samples.csv", "Samples")
+
+get_gt_csv("test_gt.csv")
 
 conn.close()
