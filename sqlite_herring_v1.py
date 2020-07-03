@@ -19,11 +19,13 @@ try:
     DROP TABLE IF EXISTS Hafro_samples_info;
 
     CREATE TABLE Samples(
-        Sample_id text PRIMARY KEY REFERENCES Storage_info(Sample_id),
+        Sample_id text PRIMARY KEY,
         Short_sid char(12) UNIQUE, --for input into genepop max 12 char
         Species_id_code int REFERENCES Species_id_codes(Species_id_code),
         Pop_name text,
-        Maturity text --"spawning" "feeding"
+        Maturity text, --"spawning" "feeding"
+        FOREIGN KEY(Sample_id) REFERENCES Hafro_samples_info(Sample_id),
+        FOREIGN KEY(Sample_id) REFERENCES Storage_info(Sample_id)
         );
 
     CREATE TABLE Genotypes(
@@ -57,6 +59,24 @@ try:
         Species_latin text,
         Species_english text,
         Species_icelandic text
+        );
+
+    CREATE TABLE Hafro_samples_info(
+        Sample_id text PRIMARY KEY,
+        Date_time_collect date,
+        Year_sampled int,
+        Latitute real,
+        Longitute real,
+        Cruise_id text,
+        Station text,
+        Age int,
+        Weight real,
+        Maturity int,
+        Length int,
+        Sex int,
+        Ship_id int,
+        Location text,
+        Sample_type text --"spawning", "feeding"
         )"""
     )
 
@@ -134,6 +154,10 @@ load_data(
     "/mnt/c/Users/alexa/Matis/SQL/data/herring/Species_id_codes.csv", "Species_id_codes"
 )
 load_data("/mnt/c/Users/alexa/Matis/SQL/data/herring/Samples.csv", "Samples")
+load_data(
+    "/mnt/c/Users/alexa/Matis/SQL/data/herring/Hafro_samples_info.csv",
+    "Hafro_samples_info",
+)
 
 get_gt_csv("test_gt.csv")
 
