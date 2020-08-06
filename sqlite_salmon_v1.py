@@ -19,56 +19,40 @@ try:
 
     CREATE TABLE Samples(
         Sample_ID text PRIMARY KEY,
-        Individual text UNIQUE,
+        Short_ID char(12) UNIQUE, --for input into genepop max 12 char
         Species text,
-        River text REFERENCES Rivers(River_code),
+        River text REFERENCES Rivers(River_short),
         Hybrid bool,
         Date_collected date,
-        latitude real,
-        longitude real
+        Latitude real,
+        Longitude real
         );
 
     CREATE TABLE Genotypes(
         Sample_ID text REFERENCES Samples(Sample_ID),
-        Probeset_ID text,
-        Gt int NOT NULL,
-        PRIMARY KEY(Sample_ID, Probeset_ID),
-        FOREIGN KEY(Probeset_ID) REFERENCES Snp_list(Probeset_ID),
-        FOREIGN KEY(Probeset_ID) REFERENCES Snp_pos(Probeset_ID)
+        Probeset_ID text REFERENCES SNP_annotations(Probeset_ID),
+        Genotype int NOT NULL,
+        PRIMARY KEY(Sample_ID, Probeset_ID)
         );
 
-    CREATE TABLE Snp_list(
-        Probeset_ID text PRIMARY KEY REFERENCES Snp_pos(Probeset_ID), 
-        Affy_snp_ID text, 
-        Conversion_type text, 
-        Bestand_recommended int, 
-        Cr real, 
-        Minor_allele_frequency real, 
-        H_w_p__value real, 
-        Fld real, 
-        Hom_fld real, 
-        Het_so real, 
-        Hom_ro real, 
-        Nclus int, 
-        N_aa int, 
-        N_ab int, 
-        N_bb int, 
-        N_nc int, 
-        Hemizygous int, 
-        Hom_het int, 
-        Best_probeset int, 
-        Gender_metrics text, 
-        Call_modified text
+    CREATE TABLE SNP_annotations(
+        Probeset_ID text PRIMARY KEY REFERENCES SNP_position(Probeset_ID), 
+        Affymetrix_ID text, 
+        Flank_sequence text,
+        Allele_A char(1),
+        Allele_B char(1),
+        Custom_ID text,
+        Info text
         );
 
-    CREATE TABLE Snp_pos(
+    CREATE TABLE SNP_position(
         Probeset_ID text PRIMARY KEY,
-        Chr text,
-        Pos bigint
+        Chromosome text,
+        Position bigint
         );
 
     CREATE TABLE Rivers(
-        River_code text PRIMARY KEY,
+        River_short text PRIMARY KEY,
         River_full_name text UNIQUE,
         Country text,
         Region text,
@@ -117,6 +101,31 @@ def load_data(filenm, tb):
     return None
 
 
+def get_gt_csv(file):
+    """Queries and reshape to output a csv containing genotypes at each marker for 
+    each individual with its short_id and population"""
+    query = """SELECT Samples.Sample_ID, Samples.Short_ID, Samples.River, 
+    Genotypes.Probeset_ID, Genotypes.Genotype
+    FROM Samples, Genotypes
+    WHERE Samples.Sample_ID = Genotypes.Sample_ID"""
+    try:
+        with conn:
+            df = pd.read_sql_query(query, conn)
+    except sqlite3.Error:
+        raise
+    df2 = df.pivot_table(  # long to wide format
+        index=["Sample_ID", "Short_ID", "River"],
+        columns="Probeset_ID",
+        values="Genotype",  # str so need to adjust aggfunc
+        aggfunc=lambda x: " ".join(
+            x
+        ),  # if several values for same index, will concatenate with space
+    )
+    df2.to_csv(file, sep=";")
+    print(f"Pulling out all genotypes from all individuals x probes into csv {file}...")
+    return None
+
+
 load_data(
     "/mnt/c/Users/alexa/Matis/SQL/data/salmon_sql_data/rivers/rivers_to_import_sql.csv",
     "Rivers",
@@ -140,4 +149,3 @@ load_data(
 
 conn.close()
 
-# parse original data from CIGENE
