@@ -88,12 +88,12 @@ conn.commit()
 
 
 def check_table_exists(tbl):
-    """Check wether tbl already exists from creation of database, otherwise it would create
+    """Check whether table tbl already exists from creation of database, otherwise it would create
     an additional one from the csv indexes"""
     c.execute(
         "SELECT name FROM sqlite_master WHERE type='table'"
-    )  # print all tables' names
-    names = c.fetchall()
+    )  # select all tables' names
+    names = c.fetchall()  # put all these tables' names into a variable
     print(f"Tables in the database are {names}")
     if (tbl,) in names:
         pass

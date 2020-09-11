@@ -13,8 +13,8 @@ try:
     c.executescript(
         """DROP TABLE IF EXISTS Samples;
     DROP TABLE IF EXISTS Genotypes;
-    DROP TABLE IF EXISTS Snp_list;
-    DROP TABLE IF EXISTS Snp_pos;
+    DROP TABLE IF EXISTS SNP_annotations;
+    DROP TABLE IF EXISTS SNP_position;
     DROP TABLE IF EXISTS Rivers;
 
     CREATE TABLE Samples(
@@ -130,13 +130,13 @@ load_data(
     "/mnt/c/Users/alexa/Matis/SQL/data/salmon_sql_data/rivers/rivers_to_import_sql.csv",
     "Rivers",
 )
-load_data(
-    "/mnt/c/Users/alexa/Matis/SQL/data/salmon_sql_data/snp_list/SsaTrack_Island_1-8_SNPlist_modified_sql_import.csv",
-    "Snp_list",
-)
+# load_data(
+# "/mnt/c/Users/alexa/Matis/SQL/data/salmon_sql_data/snp_list/SsaTrack_Island_1-8_SNPlist_modified_sql_import.csv",
+# "Snp_list",
+# )
 load_data(
     "/mnt/c/Users/alexa/Matis/SQL/data/salmon_sql_data/snp_pos/Track_SNP_Pos.csv",
-    "Snp_pos",
+    "SNP_position",
 )
 load_data(
     "/mnt/c/Users/alexa/Matis/SQL/data/salmon_sql_data/calls_mod/SsaTrack_Island_1-8.calls_mod.csv",
